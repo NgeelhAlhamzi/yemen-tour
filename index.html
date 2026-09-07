@@ -19,7 +19,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
 
-    <!-- QR Code Generator -->
+    <!-- Standalone QR Code Generator -->
     <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 
     <style>
@@ -156,99 +156,147 @@
             box-shadow: 0 0 25px var(--cyan); transform: translate(-50%, -50%);
             z-index: 999; pointer-events: none; display: none;
         }
-
-        #mobile-download-screen {
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; text-align: center; padding: 20px; background: #030712;
-        }
-        #download-btn {
-            margin-top: 20px; padding: 15px 30px; font-size: 18px; background: #00f3ff;
-            color: #000; border: none; border-radius: 12px; font-weight: bold; cursor: pointer;
-            text-decoration: none;
-        }
     </style>
 </head>
 <body>
 
-    <div id="mobile-download-screen">
-        <i class="fa-solid fa-file-video" style="font-size: 60px; color: #00f3ff; margin-bottom: 20px;"></i>
-        <h2>جولتك التفاعلية جاهزة!</h2>
-        <p style="color: #ccc; margin-top: 10px;">يمكنك الآن تنزيل مقطع الفيديو الذي توثق فيه جولتك مع المعالم اليمنيّة.</p>
-        <a id="download-btn" href="#" download="yemen_tour.webm">تنزيل الفيديو على الجوال <i class="fa-solid fa-download"></i></a>
+    <audio id="bg-music" loop preload="auto">
+        <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=ambient-soft-piano-11382.mp3" type="audio/mpeg">
+    </audio>
+
+    <video id="webcam" autoplay playsinline></video>
+    <canvas id="visitor-canvas"></canvas>
+    <div id="hand-pointer"></div>
+    <div id="fullscreen-slideshow"></div>
+    <div id="landmark-caption"></div>
+
+    <div id="final-barcode-modal">
+        <h2>امسح الباركود بهاتفك لعرض تفاصيل جولتك</h2>
+        <div id="qrcode-container">
+            <canvas id="qrcode-canvas"></canvas>
+        </div>
+        <p>استمتع بتصفح جولتك التفاعلية الخاصة في أي وقت.</p>
+        <div>
+            <button id="close-barcode-btn" class="btn-interactive" onclick="resetToMenu()">
+                الزائر التالي (<span id="countdown">20</span>ث)
+            </button>
+        </div>
     </div>
 
-    <div id="main-app">
-        <audio id="bg-music" loop preload="auto">
-            <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=ambient-soft-piano-11382.mp3" type="audio/mpeg">
-        </audio>
+    <div id="robot-container"></div>
 
-        <video id="webcam" autoplay playsinline></video>
-        <canvas id="visitor-canvas"></canvas>
-        <div id="hand-pointer"></div>
-        <div id="fullscreen-slideshow"></div>
-        <div id="landmark-caption"></div>
-
-        <div id="final-barcode-modal">
-            <h2>امسح الباركود بهاتفك لتحميل فيديو جولتك</h2>
-            <div id="qrcode-container">
-                <canvas id="qrcode-canvas"></canvas>
-            </div>
-            <p>سيتم فتح رابط مباشر لتنزيل فيديو الجولة الخاصة بك.</p>
-            <div>
-                <button id="close-barcode-btn" class="btn-interactive" onclick="resetToMenu()">
-                    الزائر التالي (<span id="countdown">25</span>ث)
-                </button>
-            </div>
+    <div id="menu-zones">
+        <div class="province-card" data-id="sanaa">
+            <div class="card-bg" style="background-image: url('images/sanaa/bab_yemen.jpg');"></div>
+            <div class="card-content"><span>صنعاء</span></div>
         </div>
-
-        <div id="robot-container"></div>
-
-        <div id="menu-zones">
-            <div class="province-card" data-id="sanaa">
-                <div class="card-bg" style="background-image: url('images/sanaa/bab_yemen.jpg');"></div>
-                <div class="card-content"><span>صنعاء</span></div>
-            </div>
-            <div class="province-card" data-id="hadramout">
-                <div class="card-bg" style="background-image: url('images/hadramout/shibam.jpg');"></div>
-                <div class="card-content"><span>حضرموت</span></div>
-            </div>
-            <div class="province-card" data-id="taiz">
-                <div class="card-bg" style="background-image: url('images/taiz/cairo_citadel.jpg');"></div>
-                <div class="card-content"><span>تعز</span></div>
-            </div>
-            <div class="province-card" data-id="hudaydah">
-                <div class="card-bg" style="background-image: url('images/hudaydah/bab_mushrif.jpg');"></div>
-                <div class="card-content"><span>الحديدة</span></div>
-            </div>
-            <div class="province-card" data-id="ibb">
-                <div class="card-bg" style="background-image: url('images/ibb/banna_waterfalls.jpg');"></div>
-                <div class="card-content"><span>إب</span></div>
-            </div>
-            <div class="province-card" data-id="marib">
-                <div class="card-bg" style="background-image: url('images/marib/bar\'an_temple.jpg');"></div>
-                <div class="card-content"><span>مأرب</span></div>
-            </div>
-            <div class="province-card" data-id="socotra">
-                <div class="card-bg" style="background-image: url('images/socotra/dragon_blood_tree.jpg');"></div>
-                <div class="card-content"><span>سقطرى</span></div>
-            </div>
+        <div class="province-card" data-id="hadramout">
+            <div class="card-bg" style="background-image: url('images/hadramout/shibam.jpg');"></div>
+            <div class="card-content"><span>حضرموت</span></div>
+        </div>
+        <div class="province-card" data-id="taiz">
+            <div class="card-bg" style="background-image: url('images/taiz/cairo_citadel.jpg');"></div>
+            <div class="card-content"><span>تعز</span></div>
+        </div>
+        <div class="province-card" data-id="hudaydah">
+            <div class="card-bg" style="background-image: url('images/hudaydah/bab_mushrif.jpg');"></div>
+            <div class="card-content"><span>الحديدة</span></div>
+        </div>
+        <div class="province-card" data-id="ibb">
+            <div class="card-bg" style="background-image: url('images/ibb/banna_waterfalls.jpg');"></div>
+            <div class="card-content"><span>إب</span></div>
+        </div>
+        <div class="province-card" data-id="marib">
+            <div class="card-bg" style="background-image: url('images/marib/bar_an_temple.jpg');"></div>
+            <div class="card-content"><span>مأرب</span></div>
+        </div>
+        <div class="province-card" data-id="socotra">
+            <div class="card-bg" style="background-image: url('images/socotra/dragon_blood_tree.jpg');"></div>
+            <div class="card-content"><span>سقطرى</span></div>
         </div>
     </div>
 
     <script>
+        const sanaaLandmarks = [
+            { id: "bab_yemen", name: "باب اليمن", img: "images/sanaa/bab_yemen.jpg", text: "أهلاً بك في باب اليمن، البوابة التاريخية العريقة لصنعاء القديمة." },
+            { id: "dar_hajar", name: "دار الحجر", img: "images/sanaa/dar_hajar.jpg", text: "وننتقل إلى دار الحجر بـ وادي ظهر، التحفة المعمارية الشامخة على قمة الصخرة." },
+            { id: "grand_mosque", name: "مئذنة الجامع الكبير", img: "images/sanaa/grand_mosque.jpg", text: "مئذنة الجامع الكبير بصنعاء، أحد أول وأعرق المساجد في الإسلام." },
+            { id: "souk_milh", name: "سوق الملح", img: "images/sanaa/souk_milh.jpg", text: "وهنا سوق الملح التراثي، حيث الأزياء اليمنية، العقيق، والحرف اليدوية الأصيلة." },
+            { id: "heritage_house", name: "بيت التراث الصنعاني", img: "images/sanaa/heritage_house.jpg", text: "بيت التراث الصنعاني، يجسد روعة الفن المعماري والنوافذ القمرية الملونة." },
+            { id: "al_qaa", name: "الحي اليهودي (القاع)", img: "images/sanaa/al_qaa.jpg", text: "حي القاع التاريخي والمعروف بطرازه المعماري الفريد." },
+            { id: "silah_palace", name: "قصر السلاح", img: "images/sanaa/silah_palace.jpg", text: "قصر السلاح التاريخي المشرف على حارة صنعاء القديمة." },
+            { id: "folk_museum", name: "متحف التراث الشعبي", img: "images/sanaa/folk_museum.jpg", text: "متحف التراث الشعبي الذي يعرض أدوات الحياة اليومية والحلي والجنبيات اليمنية القديمة." },
+            { id: "sabeen_square", name: "ميدان السبعين", img: "images/sanaa/sabeen_square.jpg", text: "ميدان السبعين، أحد أبرز الميادين والمعالم الحديثة في العاصمة صنعاء." }
+        ];
+
+        const hadramoutLandmarks = [
+            { id: "shibam", name: "مدينة شبام حضرموت", img: "images/hadramout/shibam.jpg", text: "مدينة شبام التاريخية، أقدم نطاحات سحاب طينية في العالم والملقبة بـ مانهاتن الصحراء." },
+            { id: "doan_palaces", name: "قصور وادي دوعن", img: "images/hadramout/doan_palaces.jpg", text: "قصور وادي دوعن الطينية الشهيرة بتصميمها الهندسي والجمالي الفريد." },
+            { id: "tarim", name: "تريم التاريخية", img: "images/hadramout/tarim.jpg", text: "مدينة تريم، عاصمة الثقافة الإسلامية ومركز العلم والمآذن الطينية الشاهقة." },
+            { id: "mukalla", name: "مدينة المكلا", img: "images/hadramout/mukalla.jpg", text: "المكلا عروس البحر العربي، تتميز بمينائها وإطلالتها البانورامية الساحلية." },
+            { id: "hadramout_valley", name: "وادي حضرموت", img: "images/hadramout/hadramout_valley.jpg", text: "المناظر الطبيعية الخلابة والنخيل المنتشر في أرجاء وادي حضرموت." },
+            { id: "artifacts", name: "معالم وأثريات حضرموت", img: "images/hadramout/artifacts.jpg", text: "النقوش والآثار التاريخية التي تعكس حضارة حضرموت القديمة." }
+        ];
+
+        const taizLandmarks = [
+            { id: "cairo_citadel", name: "قلعة القاهرة", img: "images/taiz/cairo_citadel.jpg", text: "قلعة القاهرة الشامخة، الحصن التاريخي الذي يطل على مدينة تعز بالكامل." },
+            { id: "al_mudhaffar_mosque", name: "جامع المظفر", img: "images/taiz/al_mudhaffar_mosque.jpg", text: "جامع المظفر التاريخي، الشهير بقبابه البيضاء الناصعة وطرازه الرسولي الفريد." },
+            { id: "bab_al_kabir", name: "باب الكبير", img: "images/taiz/bab_al_kabir.jpg", text: "الباب الكبير، المدخل التاريخي الأبرز لمدينة تعز القديمة." },
+            { id: "jabal_sabir", name: "إطلالة جبل صبر", img: "images/taiz/jabal_sabir.jpg", text: "مشهد بانورامي ساحر لمدينة تعز من أعالي قمم جبل صبر الشاهق." },
+            { id: "bab_musa", name: "باب موسى", img: "images/taiz/bab_musa.jpg", text: "باب موسى، أحد أبواب تعز القديمة التاريخية والعريقة." },
+            { id: "taiz_souk", name: "سوق تعز التراثي", img: "images/taiz/taiz_souk.jpg", text: "سوق تعز التراثي، زواريب المدينة القديمة والأسواق الشعبية المليئة بالحياة." }
+        ];
+
+        const hudaydahLandmarks = [
+            { id: "bab_mushrif", name: "باب المشرف", img: "images/hudaydah/bab_mushrif.jpg", text: "باب المشرف التاريخي، أحد أشهر الأبواب العريقة للمدينة القديمة في الحديدة." },
+            { id: "grand_mosque", name: "الجامع الكبير بالحديدة", img: "images/hudaydah/grand_mosque.jpg", text: "الجامع الكبير بالحديدة، من أقدم وأعرق المساجد التاريخية على ساحل التهامي." },
+            { id: "hudaydah_port", name: "ميناء الحديدة", img: "images/hudaydah/hudaydah_port.jpg", text: "ميناء الحديدة الشريان التجاري البحري الأهم على البحر الأحمر." },
+            { id: "corniche_castle", name: "قلعة الكورنيش", img: "images/hudaydah/corniche_castle.jpg", text: "قلعة الكورنيش الأثرية المطلة مباشرة على الساحل للبحر الأحمر." },
+            { id: "hudaydah_corniche", name: "كورنيش الحديدة", img: "images/hudaydah/hudaydah_corniche.jpg", text: "كورنيش الحديدة ومتنزهاتها البحرية الساحرة للزوار والأهالي." },
+            { id: "fish_market", name: "سوق السمك (الميناء السمكي)", img: "images/hudaydah/fish_market.jpg", text: "سوق السمك والميناء السمكي، مركز الثروة البحرية والأسماك الطازجة بالحديدة." }
+        ];
+
+        const ibbLandmarks = [
+            { id: "banna_waterfalls", name: "شلالات وادي بنا", img: "images/ibb/banna_waterfalls.jpg", text: "شلالات وادي بنا ومنطقة السحول الخضراء، من أجمل المناظر الطبيعية في اللواء الأخضر." },
+            { id: "jabal_rubai", name: "جبل ربي", img: "images/ibb/jabal_rubai.jpg", text: "جبل ربي، أعلى القمم الجبلية المطلة على مدينة إب والطبيعة المحيطة بها." },
+            { id: "jiblah_mosque", name: "مسجد جبلة التاريخي", img: "images/ibb/jiblah_mosque.jpg", text: "جامع السيدة أروى بنت أحمد الصليحي في مدينة جبلة التاريخية وعاصمتها العريقة." },
+            { id: "old_ibb", name: "مدينة إب القديمة", img: "images/ibb/old_ibb.jpg", text: "مدينة إب القديمة، بطرازها المعماري والحجري التقليدي المبهر." },
+            { id: "dhi_as_sufal", name: "مدينة ذي السفال", img: "images/ibb/dhi_as_sufal.jpg", text: "مدينة ذي السفال التاريخية، المحاطة بالمدرجات الزراعية والمساحات الخضراء." },
+            { id: "jannat_valley", name: "وادي الجنات وقرية المشنة", img: "images/ibb/jannat_valley.jpg", text: "وادي الجنات وقرية المشنة، إحدى أروع اللوحات الطبيعية لريف مدينة إب." }
+        ];
+
+        const maribLandmarks = [
+            { id: "old_marib_dam", name: "سد مأرب القديم", img: "images/marib/old_marib_dam.jpg", text: "أطلال سد مأرب القديم، أعظم الهندسات المائية في التاريخ القديم وشاهد على حضارة سبأ." },
+            { id: "awam_temple", name: "معبد أوام (محرم بلقيس)", img: "images/marib/awam_temple.jpg", text: "معبد أوام الشهير بـ محرم بلقيس، أحد أكبر وأهم المعابد السنية التاريخية في شبه الجزيرة العربية." },
+            { id: "bar_an_temple", name: "معبد بران (عرش بلقيس)", img: "images/marib/bar_an_temple.jpg", text: "معبد بران الملقب بـ عرش بلقيس، بأعمدته الخمسة الشهيرة الشامخة منذ آلاف السنين." },
+            { id: "sirwah", name: "مدينة صرواح التاريخية", img: "images/marib/sirwah.jpg", text: "مدينة صرواح التاريخية، العاصمة الأولى لسبأ والمليئة بالمباني والنقوش الأثرية." },
+            { id: "old_marib", name: "مدينة مأرب القديمة", img: "images/marib/old_marib.jpg", text: "مدينة مأرب القديمة وعمارتها الطينية والحجرية التي تحاكي تاريخ مملكة سبأ العريقة." },
+            { id: "saba_artifacts", name: "معالم وآثار حضارة سبأ", img: "images/marib/saba_artifacts.jpg", text: "جانب من المعالم الأثرية والموقع التراثية المنتشرة في صحراء وأودية مأرب." }
+        ];
+
+        const socotraLandmarks = [
+            { id: "dragon_blood_tree", name: "شجرة دم الأخوين", img: "images/socotra/dragon_blood_tree.jpg", text: "شجرة دم الأخوين النادرة والفريدة من نوعها، الرمز الأشهر لأرخبيل سقطرى." },
+            { id: "detwah_lagoon", name: "محمية ديطوح البحرية", img: "images/socotra/detwah_lagoon.jpg", text: "محمية ديطوح البحرية، بحيرة شاطئية ساحرة تجمع بين الرمال البيضاء والمياه التوركوازية." },
+            { id: "qalansiyah_beach", name: "شواطئ قلنسية", img: "images/socotra/qalansiyah_beach.jpg", text: "شواطئ مدينة قلنسية بالرمال البيضاء الناصعة والمياه الكريستالية الصافية." },
+            { id: "hoq_cave", name: "كهف حوق التاريخي", img: "images/socotra/hoq_cave.jpg", text: "كهف حوق، أحد أضخم وأهم الكهوف الطبيعية والاستكشافية في الجزيرة." },
+            { id: "diksam_plateau", name: "مرتفعات دكسم", img: "images/socotra/diksam_plateau.jpg", text: "هضبة ومرتفعات دكسم، إطلالة جبلية خلابة تجمع غابات دم الأخوين بالأودية السحيقة." },
+            { id: "fishing_villages", name: "قرى الصيد التقليدية", img: "images/socotra/fishing_villages.jpg", text: "قرى الصيد على السواحل السقطرية، تعكس الحياة اليومية البسيطة والارتباط بالبحر." }
+        ];
+
         const landmarksData = {
-            sanaa: [{ id: "bab_yemen", text: "باب اليمن التاريخي", img: "images/sanaa/bab_yemen.jpg" }],
-            hadramout: [{ id: "shibam", text: "شبام حضرموت", img: "images/hadramout/shibam.jpg" }],
-            taiz: [{ id: "cairo_citadel", text: "قلعة القاهرة", img: "images/taiz/cairo_citadel.jpg" }],
-            hudaydah: [{ id: "bab_mushrif", text: "باب المشرف", img: "images/hudaydah/bab_mushrif.jpg" }],
-            ibb: [{ id: "banna_waterfalls", text: "شلالات وادي بنا", img: "images/ibb/banna_waterfalls.jpg" }],
-            marib: [{ id: "bar'an_temple", text: "عرش بلقيس", img: "images/marib/bar'an_temple.jpg" }],
-            socotra: [{ id: "dragon_blood_tree", text: "شجرة دم الأخوين", img: "images/socotra/dragon_blood_tree.jpg" }]
+            sanaa: sanaaLandmarks,
+            hadramout: hadramoutLandmarks,
+            taiz: taizLandmarks,
+            hudaydah: hudaydahLandmarks,
+            ibb: ibbLandmarks,
+            marib: maribLandmarks,
+            socotra: socotraLandmarks
         };
 
         const videoElement = document.getElementById('webcam');
         const visitorCanvas = document.getElementById('visitor-canvas');
         const canvasCtx = visitorCanvas.getContext('2d');
+
         const handPointer = document.getElementById('hand-pointer');
         const robotContainer = document.getElementById('robot-container');
         const menuZones = document.getElementById('menu-zones');
@@ -263,52 +311,51 @@
         let lastPointerX = window.innerWidth / 2;
         let lastPointerY = window.innerHeight / 2;
         let slideshowTimeout = null;
+        let hideCaptionTimeout = null;
         let autoCloseInterval = null;
         let hasGreetedVisitor = false;
 
-        let mediaRecorder;
-        let recordedChunks = [];
-        let recordedVideoUrl = null;
-
-        // 3D Scene Setup
+        // Three.js Scene Setup
         const robotScene = new THREE.Scene();
         const robotCamera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
         const robotRenderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
         robotRenderer.setSize(window.innerWidth, window.innerHeight);
         robotContainer.appendChild(robotRenderer.domElement);
 
-        robotScene.add(new THREE.AmbientLight(0xffffff, 1.8));
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
-        dirLight.position.set(2, 4, 5);
-        robotScene.add(dirLight);
+        robotScene.add(new THREE.AmbientLight(0xffffff, 1.2));
+        const pLight = new THREE.PointLight(0x00f3ff, 4, 20); pLight.position.set(3, 5, 5); robotScene.add(pLight);
 
         const loader = new THREE.GLTFLoader();
         let samRobot = null;
         let mixer = null;
         const clock = new THREE.Clock();
 
-        loader.load('samModel/scene.gltf', function (gltf) {
+        // تحميل ملف scene.gltf الخاص بالروبوت
+        loader.load('scene.gltf', function (gltf) {
             samRobot = gltf.scene;
+            samRobot.scale.set(1.6, 1.6, 1.6);
+            samRobot.position.set(0, -1.2, 0);
 
-            // --- التعديل هنا: تصغير حجم الروبوت وموقعه لكي يظهر الرأس كاملاً ---
-            samRobot.scale.set(0.45, 0.45, 0.45); 
-            samRobot.position.set(0, -1.8, 0);
-
-            // تم إيقاف حركة الانيميشن الافتراضية لمنع الروبوت من المشي
-            /*
             if (gltf.animations && gltf.animations.length > 0) {
                 mixer = new THREE.AnimationMixer(samRobot);
                 mixer.clipAction(gltf.animations[0]).play();
             }
-            */
             robotScene.add(samRobot);
+        }, undefined, function (error) {
+            console.error('Error loading scene.gltf:', error);
         });
 
         robotCamera.position.z = 4.5;
 
         function animate() {
             requestAnimationFrame(animate);
-            // تم إلغاء تحديث الانيميشن والحركة العمودية ليظل الروبوت ثابتاً في مكانه
+            const delta = clock.getDelta();
+            if (mixer) mixer.update(delta);
+            if (samRobot) {
+                samRobot.position.y = -1.2 + Math.sin(Date.now() * 0.002) * 0.08;
+                const targetRotY = ((lastPointerX / window.innerWidth) - 0.5) * 0.8;
+                samRobot.rotation.y += (targetRotY - samRobot.rotation.y) * 0.05;
+            }
             robotRenderer.render(robotScene, robotCamera);
         }
         animate();
@@ -318,6 +365,7 @@
                 window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(text);
                 utterance.lang = 'ar-SA';
+                utterance.rate = 1.0;
                 if (callback) utterance.onend = callback;
                 window.speechSynthesis.speak(utterance);
             } else if (callback) callback();
@@ -419,45 +467,17 @@
             try { bgMusic.play(); } catch(e){}
 
             visitorCanvas.style.display = 'block';
-            startRecording();
             startShowcaseAllImages(id);
-        }
-
-        function startRecording() {
-            recordedChunks = [];
-            const stream = videoElement.srcObject;
-            if (!stream) return;
-
-            mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
-
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    recordedChunks.push(event.data);
-                }
-            };
-
-            mediaRecorder.onstop = () => {
-                const blob = new Blob(recordedChunks, { type: 'video/webm' });
-                recordedVideoUrl = URL.createObjectURL(blob);
-                generateQRCodeWithVideo(recordedVideoUrl);
-            };
-
-            mediaRecorder.start();
-        }
-
-        function stopRecording() {
-            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
-                mediaRecorder.stop();
-            }
         }
 
         function startShowcaseAllImages(provinceId) {
             const items = landmarksData[provinceId] || [];
+            if (items.length === 0) return;
+
             let index = 0;
 
             function displayItem() {
                 if (index >= items.length) {
-                    stopRecording();
                     finishTourAndShowBarcode();
                     return;
                 }
@@ -472,38 +492,47 @@
 
                     landmarkCaption.innerText = currentItem.text;
                     landmarkCaption.classList.add('show');
+
+                    if (hideCaptionTimeout) clearTimeout(hideCaptionTimeout);
+                    hideCaptionTimeout = setTimeout(() => {
+                        landmarkCaption.classList.remove('show');
+                    }, 1500);
+
                 }, 100);
 
                 index++;
-                slideshowTimeout = setTimeout(displayItem, 4000); 
+                
+                slideshowTimeout = setTimeout(() => {
+                    displayItem();
+                }, 4000); 
             }
 
             displayItem();
         }
 
-        function generateQRCodeWithVideo(videoUrl) {
+        function generateQRCode() {
             try {
-                const baseUrl = window.location.origin + window.location.pathname;
-                const downloadPageUrl = `${baseUrl}?download=true&videoUrl=${encodeURIComponent(videoUrl)}`;
-
+                const currentUrl = window.location.href.split('?')[0] + `?city=${currentProvince}`;
                 new QRious({
                     element: document.getElementById('qrcode-canvas'),
-                    value: downloadPageUrl,
+                    value: currentUrl,
                     size: 180,
                     level: 'H'
                 });
             } catch (e) {
-                console.error("QR Error:", e);
+                console.error("QR Generation Error:", e);
             }
         }
 
         function finishTourAndShowBarcode() {
             try { bgMusic.pause(); bgMusic.currentTime = 0; } catch(e){}
 
+            generateQRCode();
+
             finalBarcodeModal.classList.add('show');
             visitorCanvas.style.display = 'none';
 
-            let timeLeft = 25;
+            let timeLeft = 20;
             countdownEl.innerText = timeLeft;
 
             if (autoCloseInterval) clearInterval(autoCloseInterval);
@@ -519,6 +548,7 @@
 
         function resetToMenu() {
             if (slideshowTimeout) clearTimeout(slideshowTimeout);
+            if (hideCaptionTimeout) clearTimeout(hideCaptionTimeout);
             if (autoCloseInterval) clearInterval(autoCloseInterval);
 
             try { bgMusic.pause(); bgMusic.currentTime = 0; } catch(e){}
@@ -532,6 +562,7 @@
             
             visitorCanvas.style.display = 'none';
             robotContainer.style.opacity = '1';
+
             menuZones.classList.remove('show');
         }
 
@@ -546,18 +577,7 @@
         });
 
         window.addEventListener('load', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('download')) {
-                document.getElementById('main-app').style.display = 'none';
-                document.getElementById('mobile-download-screen').style.display = 'flex';
-                
-                const videoUrl = urlParams.get('videoUrl');
-                if (videoUrl) {
-                    document.getElementById('download-btn').href = videoUrl;
-                }
-            } else {
-                camera.start();
-            }
+            camera.start();
         });
     </script>
 </body>
