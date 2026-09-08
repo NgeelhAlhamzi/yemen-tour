@@ -36,6 +36,20 @@
 
         video#webcam { display: none; }
 
+        /* Fullscreen Toggle Button */
+        #fullscreen-btn {
+            position: absolute; top: 20px; left: 20px; z-index: 1000;
+            background: var(--glass-bg); border: 2px solid var(--cyan);
+            color: var(--cyan); width: 45px; height: 45px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-size: 18px; transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+        }
+        #fullscreen-btn:hover {
+            background: var(--cyan); color: #000;
+            box-shadow: 0 0 25px var(--cyan); transform: scale(1.1);
+        }
+
         #visitor-canvas {
             position: absolute; bottom: 15px; left: 20px;
             width: 220px; height: 320px; z-index: 10;
@@ -159,6 +173,10 @@
     </style>
 </head>
 <body>
+
+    <button id="fullscreen-btn" onclick="toggleFullscreen()" title="عرض ملء الشاشة">
+        <i class="fa-solid fa-expand"></i>
+    </button>
 
     <audio id="bg-music" loop preload="auto">
         <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=ambient-soft-piano-11382.mp3" type="audio/mpeg">
@@ -315,6 +333,19 @@
         let autoCloseInterval = null;
         let hasGreetedVisitor = false;
 
+        // دالة تفعيل وضع ملء الشاشة
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable fullscreen: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+
         // Three.js Scene Setup
         const robotScene = new THREE.Scene();
         const robotCamera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -333,8 +364,10 @@
         // تحميل ملف scene.gltf الخاص بالروبوت
         loader.load('scene.gltf', function (gltf) {
             samRobot = gltf.scene;
-            samRobot.scale.set(1.6, 1.6, 1.6);
-            samRobot.position.set(0, -1.2, 0);
+            // تصغير الروبوت لكي يظهر بالكامل
+            samRobot.scale.set(0.8, 0.8, 0.8);
+            // ضبط الموضع ليشمل الجسم والرأس في أبعاد الشاشة
+            samRobot.position.set(0, -0.6, 0);
 
             if (gltf.animations && gltf.animations.length > 0) {
                 mixer = new THREE.AnimationMixer(samRobot);
@@ -352,13 +385,19 @@
             const delta = clock.getDelta();
             if (mixer) mixer.update(delta);
             if (samRobot) {
-                samRobot.position.y = -1.2 + Math.sin(Date.now() * 0.002) * 0.08;
+                // إلغاء الحركة العمودية (المشي) وتثبيت الموقع
                 const targetRotY = ((lastPointerX / window.innerWidth) - 0.5) * 0.8;
                 samRobot.rotation.y += (targetRotY - samRobot.rotation.y) * 0.05;
             }
             robotRenderer.render(robotScene, robotCamera);
         }
         animate();
+
+        window.addEventListener('resize', () => {
+            robotCamera.aspect = window.innerWidth / window.innerHeight;
+            robotCamera.updateProjectionMatrix();
+            robotRenderer.setSize(window.innerWidth, window.innerHeight);
+        });
 
         function speak(text, callback) {
             if ('speechSynthesis' in window) {
